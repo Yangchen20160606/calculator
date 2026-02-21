@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YcCalculator - 多功能计算器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f0f2f5;
+        }
+
+        .calculator {
+            width: 100%;
+            max-width: 450px;
+            background-color: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        .calculator__title {
+            text-align: center;
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .calculator__display {
+            width: 100%;
+            height: 120px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            padding: 25px;
+            text-align: right;
+            font-size: 36px;
+            border: none;
+            outline: none;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .calculator__buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr); /* 增加一列容纳新功能 */
+            gap: 10px;
+        }
+
+        .btn {
+            height: 55px;
+            border-radius: 8px;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+
+        .btn--number {
+            background-color: #e9ecef;
+            color: #333;
+        }
+
+        .btn--operator {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn--action {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn--function {
+            background-color: #ffc107;
+            color: #333;
+        }
+
+        .btn--equal {
+            background-color: #28a745;
+            color: white;
+            grid-column: span 2;
+        }
+
+        .btn--clear {
+            grid-column: span 2;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <h1 class="calculator__title">YcCalculator</h1>
+        <input type="text" class="calculator__display" id="display" readonly>
+        <div class="calculator__buttons">
+            <button class="btn btn--action btn--clear" id="clear">AC</button>
+            <button class="btn btn--action" id="backspace">←</button>
+            <button class="btn btn--function" id="percent">%</button>
+            <button class="btn btn--function" id="sqrt">√</button>
+            <button class="btn btn--function" id="square">x²</button>
+            
+            <button class="btn btn--function" id="bracketLeft">(</button>
+            <button class="btn btn--function" id="bracketRight">)</button>
+            <button class="btn btn--function" id="plusMinus">±</button>
+            <button class="btn btn--operator" data-operator="/">÷</button>
+            <button class="btn btn--operator" data-operator="*">×</button>
+            
+            <button class="btn btn--number" data-number="7">7</button>
+            <button class="btn btn--number" data-number="8">8</button>
+            <button class="btn btn--number" data-number="9">9</button>
+            <button class="btn btn--operator" data-operator="-">-</button>
+            <button class="btn btn--operator" data-operator="+">+</button>
+            
+            <button class="btn btn--number" data-number="4">4</button>
+            <button class="btn btn--number" data-number="5">5</button>
+            <button class="btn btn--number" data-number="6">6</button>
+            <button class="btn btn--number" data-number="1">1</button>
+            <button class="btn btn--number" data-number="2">2</button>
+            
+            <button class="btn btn--number" data-number="3">3</button>
+            <button class="btn btn--number" data-number="0">0</button>
+            <button class="btn btn--number" data-number=".">.</button>
+            <button class="btn btn--equal" id="equals">=</button>
+        </div>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const display = document.getElementById('display');
+        const numberButtons = document.querySelectorAll('[data-number]');
+        const operatorButtons = document.querySelectorAll('[data-operator]');
+        const clearButton = document.getElementById('clear');
+        const backspaceButton = document.getElementById('backspace');
+        const equalsButton = document.getElementById('equals');
+        const percentButton = document.getElementById('percent');
+        const sqrtButton = document.getElementById('sqrt');
+        const squareButton = document.getElementById('square');
+        const bracketLeftButton = document.getElementById('bracketLeft');
+        const bracketRightButton = document.getElementById('bracketRight');
+        const plusMinusButton = document.getElementById('plusMinus');
+
+        // 初始化计算器状态
+        let currentExpression = ''; // 改为存储完整表达式
+        let resetDisplay = false;
+
+        // 数字按钮点击事件
+        numberButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                if (resetDisplay) {
+                    currentExpression = '';
+                    resetDisplay = false;
+                }
+                const number = button.getAttribute('data-number');
+                // 防止多个小数点
+                if (number === '.' && /\.\d*$/.test(currentExpression)) return;
+                currentExpression += number;
+                updateDisplay(currentExpression);
+            });
+        });
+
+        // 运算符按钮点击事件
+        operatorButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                if (resetDisplay) resetDisplay = false;
+                // 替换最后一个运算符（防止连续输入运算符）
+                const operator = button.getAttribute('data-operator');
+                currentExpression = currentExpression.replace(/[\+\-\×\/]$/, '') + operator;
+                updateDisplay(currentExpression);
+            });
+        });
+
+        // 括号按钮事件
+        bracketLeftButton.addEventListener('click', () => {
+            if (resetDisplay) {
+                currentExpression = '';
+                resetDisplay = false;
+            }
+            currentExpression += '(';
+            updateDisplay(currentExpression);
+        });
+
+        bracketRightButton.addEventListener('click', () => {
+            if (resetDisplay) resetDisplay = false;
+            // 确保右括号数量不超过左括号
+            const leftCount = (currentExpression.match(/\(/g) || []).length;
+            const rightCount = (currentExpression.match(/\)/g) || []).length;
+            if (leftCount > rightCount) {
+                currentExpression += ')';
+                updateDisplay(currentExpression);
+            }
+        });
+
+        // 功能按钮事件 - 百分比
+        percentButton.addEventListener('click', () => {
+            if (!currentExpression) return;
+            try {
+                // 计算当前表达式的值并转换为百分比
+                const value = evaluateExpression(currentExpression);
+                const percentValue = value / 100;
+                currentExpression = percentValue.toString();
+                updateDisplay(currentExpression);
+                resetDisplay = true;
+            } catch (e) {
+                updateDisplay('表达式错误');
+                resetDisplay = true;
+            }
+        });
+
+        // 功能按钮事件 - 开根号
+        sqrtButton.addEventListener('click', () => {
+            if (!currentExpression) return;
+            try {
+                const value = evaluateExpression(currentExpression);
+                if (value < 0) {
+                    updateDisplay('负数不能开根号');
+                    resetDisplay = true;
+                    return;
+                }
+                const sqrtValue = Math.sqrt(value);
+                currentExpression = sqrtValue.toString();
+                updateDisplay(currentExpression);
+                resetDisplay = true;
+            } catch (e) {
+                updateDisplay('表达式错误');
+                resetDisplay = true;
+            }
+        });
+
+        // 功能按钮事件 - 平方
+        squareButton.addEventListener('click', () => {
+            if (!currentExpression) return;
+            try {
+                const value = evaluateExpression(currentExpression);
+                const squareValue = Math.pow(value, 2);
+                currentExpression = squareValue.toString();
+                updateDisplay(currentExpression);
+                resetDisplay = true;
+            } catch (e) {
+                updateDisplay('表达式错误');
+                resetDisplay = true;
+            }
+        });
+
+        // 功能按钮事件 - 正负切换
+        plusMinusButton.addEventListener('click', () => {
+            if (!currentExpression) return;
+            // 处理单独数字的正负切换
+            if (/^-?\d+(\.\d+)?$/.test(currentExpression)) {
+                currentExpression = currentExpression.startsWith('-') 
+                    ? currentExpression.slice(1) 
+                    : '-' + currentExpression;
+                updateDisplay(currentExpression);
+                return;
+            }
+            // 处理表达式末尾数字的正负切换
+            currentExpression = currentExpression.replace(/(\d+(\.\d+)?)$/, (match) => {
+                return match.startsWith('-') ? match.slice(1) : '-' + match;
+            });
+            updateDisplay(currentExpression);
+        });
+
+        // 等号按钮点击事件
+        equalsButton.addEventListener('click', calculate);
+
+        // 清零按钮点击事件
+        clearButton.addEventListener('click', () => {
+            currentExpression = '';
+            updateDisplay('0');
+        });
+
+        // 退格按钮点击事件
+        backspaceButton.addEventListener('click', () => {
+            currentExpression = currentExpression.slice(0, -1);
+            updateDisplay(currentExpression || '0');
+        });
+
+        // 更新显示区域
+        function updateDisplay(value) {
+            display.value = value || '0';
+        }
+
+        // 安全解析表达式（替换×为*，避免eval安全问题）
+        function evaluateExpression(expression) {
+            // 替换×为*，处理中文括号
+            const safeExpr = expression.replace(/×/g, '*').replace(/（/g, '(').replace(/）/g, ')');
+            // 使用Function替代eval，更安全
+            return new Function(`return ${safeExpr}`)();
+        }
+
+        // 核心计算逻辑
+        function calculate() {
+            if (!currentExpression) return;
+            
+            try {
+                // 计算表达式结果
+                let result = evaluateExpression(currentExpression);
+                
+                // 处理小数位数，最多保留6位，去除末尾多余的0
+                result = Number.isInteger(result) ? result : result.toFixed(6).replace(/\.?0*$/, '');
+                
+                // 更新状态和显示
+                currentExpression = result.toString();
+                resetDisplay = true;
+                updateDisplay(currentExpression);
+            } catch (e) {
+                updateDisplay('计算错误');
+                resetDisplay = true;
+            }
+        }
+
+        // 初始化显示
+        updateDisplay('0');
+    </script>
+</body>
+</html>
